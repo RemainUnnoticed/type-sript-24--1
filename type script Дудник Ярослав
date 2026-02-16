@@ -1,0 +1,167 @@
+// 1. Тип Hobby
+type Hobby = "Спорт" | "Танцы" | "Игры" | "Музыка";
+
+let myHobby: Hobby;
+myHobby = "Спорт"; // Ок
+myHobby = "Музыка"; // Ок
+// @ts-expect-error: Тип '"Чтение"' не совместим с типом Hobby
+myHobby = "Чтение"; 
+
+// 2. Тип Extra и Facultative
+type Extra = "Математика" | "Биология" | "Робототехника" | "Рисование";
+type Facultative = Hobby | Extra;
+
+let choice1: Facultative = "Танцы";        // Из Hobby
+let choice2: Facultative = "Робототехника"; // Из Extra
+
+// 3. Описание Student через type
+type Student = {
+    name: string;
+    age: number;
+    facultative: Facultative;
+};
+
+const student1: Student = { name: "Алексей", age: 18, facultative: "Спорт" };
+const student2: Student = { name: "Мария", age: 19, facultative: "Биология" };
+
+interface StudentI {
+    name: string;
+    age: number;
+    facultative: Facultative;
+}
+
+const studentI1: StudentI = { name: "Игорь", age: 20, facultative: "Игры" };
+const studentI2: StudentI = { name: "Елена", age: 21, facultative: "Рисование" };
+
+// 5. Ограничение по возрасту
+type Age = 16 | 17 | 18 | 19;
+
+// 6. Группы
+type Group = "A" | "B" | "C";
+
+type RefinedStudent = {
+    name: string;
+    age: Age;
+    facultative: Facultative;
+    group: Group;
+};
+
+const topStudent: RefinedStudent = {
+    name: "Кирилл",
+    age: 17, // Ок
+    facultative: "Музыка",
+    group: "A"
+};
+
+// student.age = 25; // Ошибка! 25 не входит в тип Age
+
+class StudentClass {
+    constructor(
+        public name: string,
+        public age: Age,
+        public facultative: Facultative
+    ) {}
+
+    // 8. Метод info
+    info(): string {
+        return `${this.name}, ${this.age}, ${this.facultative}`;
+    }
+}
+
+const s1 = new StudentClass("Иван", 17, "Математика");
+const s2 = new StudentClass("Анна", 18, "Танцы");
+
+console.log(s1.info());
+console.log(s2.info());
+
+// 9-12. Класс School
+class School {
+    students: StudentClass[] = [];
+
+    addStudent(student: StudentClass): void {
+        this.students.push(student);
+    }
+
+    // 10. Список имен
+    listNames(): string[] {
+        return this.students.map(s => s.name);
+    }
+
+    // 11. Подсчет по факультетам
+    countByFacultative(f: Facultative): number {
+        return this.students.filter(s => s.facultative === f).length;
+    }
+
+    // 12. Поиск по имени
+    findByName(name: string): StudentClass | null {
+        return this.students.find(s => s.name === name) || null;
+    }
+
+    // 14. Удаление
+    removeByName(name: string): boolean {
+        const index = this.students.findIndex(s => s.name === name);
+        if (index !== -1) {
+            this.students.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+}
+
+const mySchool = new School();
+mySchool.addStudent(s1);
+mySchool.addStudent(s2);
+mySchool.addStudent(new StudentClass("Дмитрий", 16, "Математика"));
+
+// Определяем тип события
+type SchoolEvent = 
+    | { type: "add"; student: StudentClass }
+    | { type: "remove"; name: string };
+
+// Функция-обработчик
+function handleEvent(school: School, event: SchoolEvent): void {
+    switch (event.type) {
+        case "add":
+            // Здесь TS точно знает, что у event есть поле student
+            school.addStudent(event.student);
+            console.log(`Событие: Студент ${event.student.name} добавлен.`);
+            break;
+        case "remove":
+            // А здесь TS знает, что есть поле name, но нет student
+            const success = school.removeByName(event.name);
+            console.log(
+                success 
+                ? `Событие: Студент ${event.name} удален.` 
+                : `Событие: Студент ${event.name} не найден.`
+            );
+            break;
+    }
+}
+
+// Проверка
+const newStudent = new StudentClass("Кирилл", 17, "Робототехника");
+handleEvent(mySchool, { type: "add", student: newStudent });
+handleEvent(mySchool, { type: "remove", name: "Иван" });
+
+// Определение типа уровня
+type Level = 1 | 2 | 3 | 4;
+
+// Функция перехода
+function nextLevel(level: Level): Level {
+    if (level === 4) {
+        return 4; // Максимальный уровень
+    }
+    // Используем 'as Level', так как результат сложения TS по умолчанию считает обычным number
+    return (level + 1) as Level;
+}
+
+// Тестирование
+let studentLevel: Level = 2;
+studentLevel = nextLevel(studentLevel); // Станет 3
+console.log(`Новый уровень: ${studentLevel}`);
+
+studentLevel = nextLevel(4); // Останется 4
+console.log(`Уровень после максимума: ${studentLevel}`);
+
+// Проверка типизации:
+// studentLevel = 5; // Ошибка: Тип '5' не совместим с типом Level
